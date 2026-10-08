@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '4.1.1'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.zpd'
+version = '0.0.1-SNAPSHOT'
+description = 'zpd-incident-system'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // DB 연동 및 JPA CRUD 지원
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // REST API 컨트롤러 및 웹 서버 구동
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    // 코드 수정 시 서버 자동 재시작
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    // MySQL 통신 드라이버
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
