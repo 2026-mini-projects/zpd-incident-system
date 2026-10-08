@@ -1,3 +1,7 @@
 spring:
   application:
     name: zpd-incident-system
+  datasource:
+    url: jdbc:mysql://localhost:3306/zpd_db
+    username: zpd_admin
+    password: zpd_admin
