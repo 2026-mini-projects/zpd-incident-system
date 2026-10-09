@@ -7,7 +7,7 @@ DROP TABLE IF EXISTS zpd_user;
 
 -- 2. 사용자 계정 테이블 (ADMIN, OFFICER, CITIZEN 공통)
 CREATE TABLE zpd_user (
-                          id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '사용자 고유 식별자',
+                          id INT AUTO_INCREMENT PRIMARY KEY COMMENT '사용자 고유 식별자',
                           username VARCHAR(50) NOT NULL UNIQUE COMMENT '로그인 아이디',
                           password VARCHAR(255) NOT NULL COMMENT '암호화된 비밀번호',
                           nickname VARCHAR(50) NOT NULL COMMENT '사용자 이름/닉네임',
@@ -16,25 +16,25 @@ CREATE TABLE zpd_user (
 
 -- 3. 경찰관 프로필 테이블 (1001번 사번부터 시작)
 CREATE TABLE zpd_officer (
-                             id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '경찰관 고유 사번',
+                             id INT AUTO_INCREMENT PRIMARY KEY COMMENT '경찰관 고유 사번',
                              name VARCHAR(50) NOT NULL COMMENT '경찰관 풀네임',
                              species VARCHAR(50) NOT NULL COMMENT '동물 종족 (Enum 매핑 코드)',
                              size VARCHAR(20) NOT NULL COMMENT '체급 (SMALL, MEDIUM, LARGE)',
                              district VARCHAR(30) NOT NULL COMMENT '관할 구역',
                              status VARCHAR(20) NOT NULL DEFAULT 'STANDBY' COMMENT '근무 상태 (STANDBY, WORKING, RETIRED)',
-                             user_id BIGINT NOT NULL UNIQUE COMMENT '연결 계정 식별자 (zpd_user.id)',
+                             user_id INT NOT NULL UNIQUE COMMENT '연결 계정 식별자 (zpd_user.id)',
                              CONSTRAINT fk_zpd_officer_user FOREIGN KEY (user_id) REFERENCES zpd_user(id)
 ) ENGINE=InnoDB AUTO_INCREMENT=1001 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 4. 사건 관리 테이블 (초 단위 표기 DATETIME)
 CREATE TABLE zpd_case (
-                          id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '사건 번호',
+                          id INT AUTO_INCREMENT PRIMARY KEY COMMENT '사건 번호',
                           title VARCHAR(100) NOT NULL COMMENT '사건 제목',
                           content TEXT NOT NULL COMMENT '사건 상세 내용',
                           district VARCHAR(30) NOT NULL COMMENT '발생 구역',
                           status VARCHAR(30) NOT NULL DEFAULT 'WAITING' COMMENT '사건 상태 (WAITING, IN_PROGRESS, SOLVED, FALSE_ALARM, CLOSED, CANCELLED)',
-                          reporter_id BIGINT NOT NULL COMMENT '신고 시민 식별자 (zpd_user.id)',
-                          officer_id BIGINT NULL COMMENT '담당 경찰관 식별자 (zpd_officer.id)',
+                          reporter_id INT NOT NULL COMMENT '신고 시민 식별자 (zpd_user.id)',
+                          officer_id INT NULL COMMENT '담당 경찰관 식별자 (zpd_officer.id)',
                           created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '사건 접수 일시',
                           closed_at DATETIME NULL COMMENT '종결/취소 일시',
                           CONSTRAINT fk_zpd_case_reporter FOREIGN KEY (reporter_id) REFERENCES zpd_user(id),
