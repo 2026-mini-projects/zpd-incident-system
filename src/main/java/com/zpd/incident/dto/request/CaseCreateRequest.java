@@ -5,9 +5,9 @@ import com.zpd.incident.entity.enums.District;
 // 사건 접수 요청 DTO
 public class CaseCreateRequest {
 
-    private String title;
-    private String content;
-    private District district;
+    private String title;               // 사건 제목
+    private String content;             // 사건 상세 내용
+    private District district;          // 사건 발생 구역
 
     public CaseCreateRequest() {
     }
