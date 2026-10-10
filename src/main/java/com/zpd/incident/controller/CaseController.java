@@ -1,6 +1,6 @@
 package com.zpd.incident.controller;
 
-import com.zpd.incident.dto.CaseSummaryResponse;
+import com.zpd.incident.dto.response.CaseSummaryResponse;
 import com.zpd.incident.service.CaseService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
