@@ -1,4 +1,4 @@
-package com.zpd.incident.dto;
+package com.zpd.incident.dto.response;
 
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;

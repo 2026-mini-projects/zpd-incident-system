@@ -1,6 +1,6 @@
 package com.zpd.incident.service;
 
-import com.zpd.incident.dto.CaseSummaryResponse;
+import com.zpd.incident.dto.response.CaseSummaryResponse;
 import com.zpd.incident.repository.IncidentCaseRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
