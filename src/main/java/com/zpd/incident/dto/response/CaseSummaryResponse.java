@@ -10,34 +10,34 @@ public class CaseSummaryResponse {
     private Integer id;
     private String title;
     private District district;
-    private CaseStatus caseStatus;
+    private CaseStatus status;
     private LocalDateTime createdAt;
 
-    public CaseSummaryResponse(Integer id, String title, District district, CaseStatus caseStatus, LocalDateTime createdAt) {
+    public CaseSummaryResponse(Integer id, String title, District district, CaseStatus status, LocalDateTime createdAt) {
         this.id = id;
         this.title = title;
         this.district = district;
-        this.caseStatus = caseStatus;
+        this.status = status;
         this.createdAt = createdAt;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public Integer getId() {
+        return id;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public String getTitle() {
+        return title;
     }
 
-    public void setDistrict(District district) {
-        this.district = district;
+    public District getDistrict() {
+        return district;
     }
 
-    public void setCaseStatus(CaseStatus caseStatus) {
-        this.caseStatus = caseStatus;
+    public CaseStatus getStatus() {
+        return status;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }
