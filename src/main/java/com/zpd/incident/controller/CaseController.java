@@ -1,8 +1,10 @@
 package com.zpd.incident.controller;
 
 import com.zpd.incident.common.PageResponse;
+import com.zpd.incident.dto.response.AssignedCaseResponse;
 import com.zpd.incident.dto.response.CaseDetailResponse;
 import com.zpd.incident.dto.response.CaseSummaryResponse;
+import com.zpd.incident.dto.response.ReportedCaseResponse;
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.service.CaseService;
@@ -27,6 +29,7 @@ public class CaseController {
             @RequestParam(required = false) CaseStatus status,       // 사건 상태 필터
             @RequestParam(required = false) District district,       // 발생 구역 필터
             @RequestParam(required = false) String keyword,          // 사건 제목 검색어
+            @RequestParam(required = false) Integer officerId,       // (관리자용) 담당 경찰관 사건 필터
             @RequestParam(defaultValue = "0") int page,              // 조회할 페이지 번호
             @RequestParam(defaultValue = "10") int size,             // 한 페이지에 표시할 사건 수
             @RequestParam(defaultValue = "desc") String sort         // 접수 일시 정렬 방향
@@ -37,6 +40,7 @@ public class CaseController {
                         status,
                         district,
                         keyword,
+                        officerId,
                         page,
                         size,
                         sort
@@ -52,5 +56,41 @@ public class CaseController {
         return caseService.getCaseById(caseId);
     }
 
+    // 시민이 본인 신고 사건 목록을 페이징 조회
+    @GetMapping("/reported")
+    public Map<String, PageResponse<ReportedCaseResponse>> getReportedCases(
+            @RequestParam Integer reporterId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sort
+    ) {
+        PageResponse<ReportedCaseResponse> response =
+                caseService.getReportedCases(
+                        reporterId,
+                        page,
+                        size,
+                        sort
+                );
 
+        return Map.of("data", response);
+    }
+
+    // 경찰관이 본인 담당 사건 목록을 페이징 조회
+    @GetMapping("/assigned")
+    public Map<String, PageResponse<AssignedCaseResponse>> getAssignedCases(
+            @RequestParam Integer officerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sort
+    ) {
+        PageResponse<AssignedCaseResponse> response =
+                caseService.getAssignedCases(
+                        officerId,
+                        page,
+                        size,
+                        sort
+                );
+
+        return Map.of("data", response);
+    }
 }
