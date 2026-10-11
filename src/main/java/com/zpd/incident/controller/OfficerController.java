@@ -16,6 +16,7 @@ import com.zpd.incident.dto.request.OfficerUpdateRequest;
 import com.zpd.incident.dto.response.OfficerUpdateResponse;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import com.zpd.incident.dto.response.OfficerRetireResponse;
 
 import java.util.Map;
 
@@ -69,6 +70,16 @@ public class OfficerController {
 
         OfficerUpdateResponse response =
                 officerService.updateOfficer(officerId, request);
+
+        return Map.of("data", response);
+    }
+
+    @PatchMapping("/{officerId}/retire")
+    public Map<String, OfficerRetireResponse> retireOfficer(
+            @PathVariable("officerId") Integer officerId) {
+
+        OfficerRetireResponse response =
+                officerService.retireOfficer(officerId);
 
         return Map.of("data", response);
     }

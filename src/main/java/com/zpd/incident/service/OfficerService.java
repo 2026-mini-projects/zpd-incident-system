@@ -20,6 +20,9 @@ import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 import com.zpd.incident.dto.request.OfficerUpdateRequest;
 import com.zpd.incident.dto.response.OfficerUpdateResponse;
+import com.zpd.incident.repository.IncidentCaseRepository;
+import com.zpd.incident.dto.response.OfficerRetireResponse;
+import com.zpd.incident.entity.enums.CaseStatus;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,9 +31,44 @@ import java.util.List;
 public class OfficerService {
 
     private final OfficerRepository officerRepository;
+    private final IncidentCaseRepository incidentCaseRepository;
 
-    public OfficerService(OfficerRepository officerRepository) {
+    public OfficerService(
+            OfficerRepository officerRepository,
+            IncidentCaseRepository incidentCaseRepository) {
         this.officerRepository = officerRepository;
+        this.incidentCaseRepository = incidentCaseRepository;
+    }
+
+    @Transactional
+    public OfficerRetireResponse retireOfficer(Integer officerId) {
+        Officer officer = officerRepository.findById(officerId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "경찰관을 찾을 수 없습니다."
+                ));
+
+        if (officer.getStatus() == OfficerStatus.RETIRED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "이미 퇴직한 경찰관입니다."
+            );
+        }
+
+        if (incidentCaseRepository.existsByOfficer_IdAndCaseStatus(
+                officerId, CaseStatus.IN_PROGRESS)) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "진행 중인 사건이 있어 퇴직할 수 없습니다."
+            );
+        }
+
+        officer.retire();
+
+        return new OfficerRetireResponse(
+                officer.getId(),
+                officer.getStatus()
+        );
     }
 
     @Transactional
