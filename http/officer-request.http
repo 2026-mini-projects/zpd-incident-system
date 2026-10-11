@@ -1,0 +1,53 @@
+### 수정 전 경찰관 상세 조회
+GET http://localhost:8080/api/v1/officers/1001
+Accept: application/json
+
+### 경찰관 닉네임만 수정
+PATCH http://localhost:8080/api/v1/officers/1001
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nickname": "주디 반장"
+}
+
+### 공백 닉네임 수정 거부 확인
+PATCH http://localhost:8080/api/v1/officers/1001
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nickname": "   "
+}
+
+### 존재하지 않는 경찰관 수정
+PATCH http://localhost:8080/api/v1/officers/99999
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nickname": "테스트"
+}
+
+### 경찰관 여러 필드 수정
+PATCH http://localhost:8080/api/v1/officers/1001
+Content-Type: application/json
+Accept: application/json
+
+{
+  "nickname": "주디 홉스",
+  "name": "주디 홉스",
+  "species": "RABBIT",
+  "size": "MEDIUM",
+  "district": "RAINFOREST"
+}
+
+### 테스트 후 원래 값으로 복원
+PATCH http://localhost:8080/api/v1/officers/1001
+Content-Type: application/json
+Accept: application/json
+
+{
+  "size": "SMALL",
+  "district": "DOWNTOWN"
+}

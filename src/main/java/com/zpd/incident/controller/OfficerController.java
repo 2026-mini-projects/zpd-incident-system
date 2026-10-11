@@ -12,6 +12,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.zpd.incident.entity.enums.OfficerStatus;
 import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.entity.enums.OfficerSize;
+import com.zpd.incident.dto.request.OfficerUpdateRequest;
+import com.zpd.incident.dto.response.OfficerUpdateResponse;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Map;
 
@@ -54,6 +58,17 @@ public class OfficerController {
                 officerService.getOfficers(
                         page, size, status, district, sizeType, keyword, sort
                 );
+
+        return Map.of("data", response);
+    }
+
+    @PatchMapping("/{officerId}")
+    public Map<String, OfficerUpdateResponse> updateOfficer(
+            @PathVariable("officerId") Integer officerId,
+            @RequestBody OfficerUpdateRequest request) {
+
+        OfficerUpdateResponse response =
+                officerService.updateOfficer(officerId, request);
 
         return Map.of("data", response);
     }
