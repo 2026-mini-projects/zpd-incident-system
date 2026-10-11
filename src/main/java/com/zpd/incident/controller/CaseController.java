@@ -29,6 +29,7 @@ public class CaseController {
             @RequestParam(required = false) CaseStatus status,       // 사건 상태 필터
             @RequestParam(required = false) District district,       // 발생 구역 필터
             @RequestParam(required = false) String keyword,          // 사건 제목 검색어
+            @RequestParam(required = false) Integer officerId,       // (관리자용) 담당 경찰관 사건 필터
             @RequestParam(defaultValue = "0") int page,              // 조회할 페이지 번호
             @RequestParam(defaultValue = "10") int size,             // 한 페이지에 표시할 사건 수
             @RequestParam(defaultValue = "desc") String sort         // 접수 일시 정렬 방향
@@ -39,6 +40,7 @@ public class CaseController {
                         status,
                         district,
                         keyword,
+                        officerId,
                         page,
                         size,
                         sort

@@ -79,6 +79,7 @@ public class CaseService {
             CaseStatus status,          // 사건 상태
             District district,          // 발생 구역
             String keyword,             // 사건 제목 검색어
+            Integer officerId,
             int page,                   // 조회할 페이지 번호
             int size,                   // 한 페이지에 표시할 사건 수
             String sort                 // 접수 일시 정렬 방향(asc/desc)
@@ -96,7 +97,7 @@ public class CaseService {
         Pageable pageable = PageRequest.of(page, size, sortCondition);
 
         // 값이 전달된 상태·구역·제목 조건만 동적으로 조합
-        Specification<IncidentCase> filter = createFilter(status, district, keyword);
+        Specification<IncidentCase> filter = createFilter(status, district, keyword, officerId);
 
         // 필터와 페이징 조건을 적용해 사건 Entity 조회
         Page<IncidentCase> incidentCases =
@@ -129,7 +130,8 @@ public class CaseService {
     private Specification<IncidentCase> createFilter(
             CaseStatus status,
             District district,
-            String keyword
+            String keyword,
+            Integer officerId
     ){
         return(root, query, criteriaBuilder) ->{
             List<Predicate> conditions = new ArrayList<>();
@@ -150,6 +152,16 @@ public class CaseService {
                         criteriaBuilder.equal(
                                 root.get("district"),
                                 district
+                        )
+                );
+            }
+
+            // 관리자가 선택한 경찰관이 담당하는 사건만 조회
+            if (officerId != null) {
+                conditions.add(
+                        criteriaBuilder.equal(
+                                root.get("officer").get("id"),
+                                officerId
                         )
                 );
             }
