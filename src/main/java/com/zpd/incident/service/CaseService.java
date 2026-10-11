@@ -1,10 +1,7 @@
 package com.zpd.incident.service;
 
 import com.zpd.incident.common.PageResponse;
-import com.zpd.incident.dto.response.CaseDetailResponse;
-import com.zpd.incident.dto.response.CaseOfficerResponse;
-import com.zpd.incident.dto.response.CaseReporterResponse;
-import com.zpd.incident.dto.response.CaseSummaryResponse;
+import com.zpd.incident.dto.response.*;
 import com.zpd.incident.entity.IncidentCase;
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;
@@ -179,5 +176,66 @@ public class CaseService {
                     conditions.toArray(new Predicate[0])
             );
         };
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ReportedCaseResponse> getReportedCases(
+            Integer reporterId,
+            int page,
+            int size,
+            String sort
+    ){
+        // 1. 접수 일시 기준 정렬 조건 생성
+        Sort sortCondition = Sort.by(
+                "asc".equalsIgnoreCase(sort)
+                        ? Sort.Direction.ASC
+                        : Sort.Direction.DESC,
+                "createdAt"
+        );
+
+        // 2. 페이지 번호, 크기와 정렬 조건 생성
+        Pageable pageable =
+                PageRequest.of(page, size, sortCondition);
+
+        // 3. 해당 시민이 신고한 사건 조회
+        Page<IncidentCase> reportedCases =
+                incidentCaseRepository.findByReporter_Id(
+                        reporterId,
+                        pageable
+                );
+
+        // 4. 사건 Entity를 시민 신고 사건 응답 DTO로 변환
+        Page<ReportedCaseResponse> responses =
+                reportedCases.map(incidentCase -> {
+
+                    CaseOfficerResponse officerResponse = null;
+
+                    // 아직 담당 경찰관이 없는 사건은 officer를 null로 반환
+                    if (incidentCase.getOfficer() != null) {
+                        officerResponse = new CaseOfficerResponse(
+                                incidentCase.getOfficer().getId(),
+                                incidentCase.getOfficer().getName()
+                        );
+                    }
+
+                    return new ReportedCaseResponse(
+                            incidentCase.getCaseId(),
+                            incidentCase.getTitle(),
+                            incidentCase.getDistrict(),
+                            incidentCase.getCaseStatus(),
+                            officerResponse,
+                            incidentCase.getCreatedAt()
+                    );
+                });
+
+        // 5. DTO 목록과 페이지 정보를 함께 반환
+        return new PageResponse<>(
+                responses.getContent(),
+                responses.getNumber(),
+                responses.getSize(),
+                responses.getTotalElements(),
+                responses.getTotalPages(),
+                responses.hasNext()
+        );
     }
 }

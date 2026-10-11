@@ -3,6 +3,7 @@ package com.zpd.incident.controller;
 import com.zpd.incident.common.PageResponse;
 import com.zpd.incident.dto.response.CaseDetailResponse;
 import com.zpd.incident.dto.response.CaseSummaryResponse;
+import com.zpd.incident.dto.response.ReportedCaseResponse;
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.service.CaseService;
@@ -52,5 +53,22 @@ public class CaseController {
         return caseService.getCaseById(caseId);
     }
 
+    // 시민이 본인 신고 사건 목록을 페이징 조회
+    @GetMapping("/reported")
+    public Map<String, PageResponse<ReportedCaseResponse>> getReportedCases(
+            @RequestParam Integer reporterId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sort
+    ) {
+        PageResponse<ReportedCaseResponse> response =
+                caseService.getReportedCases(
+                        reporterId,
+                        page,
+                        size,
+                        sort
+                );
 
+        return Map.of("data", response);
+    }
 }

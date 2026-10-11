@@ -35,3 +35,11 @@ Accept: application/json
 ### 사건 목록 복합 조건 조회
 GET http://localhost:8080/api/v1/cases?status=WAITING&district=DOWNTOWN&keyword=레이싱&page=0&size=5&sort=desc
 Accept: application/json
+
+### 시민(Id = 15, nickname = 프루 프루) 신고 사건 목록 조회 - (페이징 및 오래된순 정렬)
+GET http://localhost:8080/api/v1/cases/reported?reporterId=15&page=0&size=1&sort=asc
+Accept: application/json
+
+### 시민(Id = 17, nickname = 리오도어 라이언하트) 신고 사건 목록 조회 - 신고 내역 없음
+GET http://localhost:8080/api/v1/cases/reported?reporterId=17&page=0&size=10&sort=desc
+Accept: application/json
