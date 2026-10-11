@@ -5,13 +5,14 @@ import com.zpd.incident.entity.enums.District;
 
 import java.time.LocalDateTime;
 
+// 전체 사건 목록에 표시할 사건 요약 응답 DTO
 public class CaseSummaryResponse {
 
-    private Integer id;
-    private String title;
-    private District district;
-    private CaseStatus status;
-    private LocalDateTime createdAt;
+    private Integer id;                 // 사건 번호
+    private String title;               // 사건 제목
+    private District district;          // 사건 발생 구역
+    private CaseStatus status;          // 사건 상태
+    private LocalDateTime createdAt;    // 사건 접수 일시
 
     public CaseSummaryResponse(Integer id, String title, District district, CaseStatus status, LocalDateTime createdAt) {
         this.id = id;
