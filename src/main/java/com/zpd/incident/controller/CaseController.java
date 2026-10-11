@@ -1,16 +1,16 @@
 package com.zpd.incident.controller;
 
+import com.zpd.incident.common.PageResponse;
 import com.zpd.incident.dto.response.CaseDetailResponse;
 import com.zpd.incident.dto.response.CaseSummaryResponse;
+import com.zpd.incident.entity.enums.CaseStatus;
+import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.service.CaseService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
-// 사건 목록 및 단건 상세 조회 요청을 처리하는 REST Controller
+// 사건 목록의 필터·페이징 조회와 단건 상세 조회 요청을 처리하는 REST Controller
 @RestController
 @RequestMapping("/api/v1/cases")
 public class CaseController {
@@ -21,11 +21,29 @@ public class CaseController {
         this.caseService = caseService;
     }
 
-    // 전체 사건을 요약 정보 목록으로 조회
+    // 선택 조건과 페이지 정보를 요청 파라미터로 받아 전체 사건 요약 목록 조회
     @GetMapping
-    public List<CaseSummaryResponse> getAllCases() {
+    public Map<String, PageResponse<CaseSummaryResponse>> getAllCases(
+            @RequestParam(required = false) CaseStatus status,       // 사건 상태 필터
+            @RequestParam(required = false) District district,       // 발생 구역 필터
+            @RequestParam(required = false) String keyword,          // 사건 제목 검색어
+            @RequestParam(defaultValue = "0") int page,              // 조회할 페이지 번호
+            @RequestParam(defaultValue = "10") int size,             // 한 페이지에 표시할 사건 수
+            @RequestParam(defaultValue = "desc") String sort         // 접수 일시 정렬 방향
+    ) {
+        // 요청받은 조건을 Service에 전달해 페이징된 사건 요약 결과 조회
+        PageResponse<CaseSummaryResponse> response =
+                caseService.getAllCases(
+                        status,
+                        district,
+                        keyword,
+                        page,
+                        size,
+                        sort
+                );
 
-        return caseService.getAllCases();
+        // 공통 성공 응답 형태에 맞춰 조회 결과를 data 항목으로 반환
+        return Map.of("data", response);
     }
 
     // URL로 전달받은 사건 번호에 해당하는 상세 정보를 조회
@@ -33,4 +51,6 @@ public class CaseController {
     public CaseDetailResponse getCaseById(@PathVariable Integer caseId){
         return caseService.getCaseById(caseId);
     }
+
+
 }

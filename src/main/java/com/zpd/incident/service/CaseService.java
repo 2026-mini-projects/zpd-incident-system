@@ -1,18 +1,28 @@
 package com.zpd.incident.service;
 
+import com.zpd.incident.common.PageResponse;
 import com.zpd.incident.dto.response.CaseDetailResponse;
 import com.zpd.incident.dto.response.CaseOfficerResponse;
 import com.zpd.incident.dto.response.CaseReporterResponse;
 import com.zpd.incident.dto.response.CaseSummaryResponse;
 import com.zpd.incident.entity.IncidentCase;
+import com.zpd.incident.entity.enums.CaseStatus;
+import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.exception.CaseNotFoundException;
 import com.zpd.incident.repository.IncidentCaseRepository;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
-// 사건 조회와 Entity-Response DTO 변환을 담당하는 Service
+// 사건 조회, 검색 조건 처리와 Entity-Response DTO 변환을 담당하는 Service
 @Service
 public class CaseService {
 
@@ -21,21 +31,6 @@ public class CaseService {
     // 생성자에서 Repository를 전달받아 필드에 저장
     public CaseService(IncidentCaseRepository incidentCaseRepository) {
         this.incidentCaseRepository = incidentCaseRepository;
-    }
-
-    // 전체 사건을 조회해 목록용 요약 DTO로 변환
-    @Transactional(readOnly = true)
-    public List<CaseSummaryResponse> getAllCases() {
-
-        return incidentCaseRepository.findAll()
-                .stream()
-                .map(incidentCase -> new CaseSummaryResponse(
-                        incidentCase.getCaseId(),
-                        incidentCase.getTitle(),
-                        incidentCase.getDistrict(),
-                        incidentCase.getCaseStatus(),
-                        incidentCase.getCreatedAt()
-                )).toList();
     }
 
     // 사건 번호로 단건 조회하며, 존재하지 않으면 CaseNotFoundException 발생
@@ -79,5 +74,110 @@ public class CaseService {
                 caseOfficerResponse,
                 caseReporterResponse
         );
+    }
+
+    // 선택 조건과 페이징·접수 일시 정렬을 적용해 사건 요약 목록 조회
+    @Transactional(readOnly = true)
+    public PageResponse<CaseSummaryResponse> getAllCases(
+            CaseStatus status,          // 사건 상태
+            District district,          // 발생 구역
+            String keyword,             // 사건 제목 검색어
+            int page,                   // 조회할 페이지 번호
+            int size,                   // 한 페이지에 표시할 사건 수
+            String sort                 // 접수 일시 정렬 방향(asc/desc)
+    ){
+
+        // 사건 접수 일시를 기준으로 오래된순(ASC) 또는 최신순(DESC) 정렬
+        Sort sortCondition = Sort.by(
+                "asc".equalsIgnoreCase(sort)
+                ? Sort.Direction.ASC
+                :Sort.Direction.DESC,
+                "createdAt"
+        );
+
+        // 페이지 번호, 페이지 크기와 정렬 조건을 하나의 조회 조건으로 구성
+        Pageable pageable = PageRequest.of(page, size, sortCondition);
+
+        // 값이 전달된 상태·구역·제목 조건만 동적으로 조합
+        Specification<IncidentCase> filter = createFilter(status, district, keyword);
+
+        // 필터와 페이징 조건을 적용해 사건 Entity 조회
+        Page<IncidentCase> incidentCases =
+                incidentCaseRepository.findAll(filter, pageable);
+
+        // 페이지 정보를 유지하면서 사건 Entity를 목록용 응답 DTO로 변환
+        Page<CaseSummaryResponse> responses =
+                incidentCases.map(incidentCase ->
+                        new CaseSummaryResponse(
+                                incidentCase.getCaseId(),
+                                incidentCase.getTitle(),
+                                incidentCase.getDistrict(),
+                                incidentCase.getCaseStatus(),
+                                incidentCase.getCreatedAt()
+                        )
+                );
+
+        // DTO 목록과 현재 페이지·전체 개수·다음 페이지 여부를 공통 페이징 응답으로 반환
+        return new PageResponse<>(
+                responses.getContent(),
+                responses.getNumber(),
+                responses.getSize(),
+                responses.getTotalElements(),
+                responses.getTotalPages(),
+                responses.hasNext()
+        );
+    }
+
+    // 전달된 값이 있는 검색 조건만 추가하고 모든 조건을 AND로 결합
+    private Specification<IncidentCase> createFilter(
+            CaseStatus status,
+            District district,
+            String keyword
+    ){
+        return(root, query, criteriaBuilder) ->{
+            List<Predicate> conditions = new ArrayList<>();
+
+            // 사건 상태가 선택된 경우 같은 상태의 사건만 조회
+            if(status != null){
+                conditions.add(
+                        criteriaBuilder.equal(
+                                root.get("caseStatus"),
+                                status
+                        )
+                );
+            }
+
+            // 발생 구역이 선택된 경우 같은 구역의 사건만 조회
+            if(district != null){
+                conditions.add(
+                        criteriaBuilder.equal(
+                                root.get("district"),
+                                district
+                        )
+                );
+            }
+
+            // 검색어가 있으면 제목에 해당 문자열이 포함된 사건만 조회
+            if(keyword != null && !keyword.isBlank()){
+                // LIKE 검색의 특수문자(!, %, _)를 일반 문자로 처리
+                String escapedKeyword = keyword.trim()
+                        .replace("!", "!!")
+                        .replace("%", "!%")
+                        .replace("_", "!_");
+
+                conditions.add(
+                        criteriaBuilder.like(
+                                root.get("title"),
+                                "%" + escapedKeyword + "%",
+                                '!'
+                        )
+                );
+            }
+
+            // 추가된 모든 조건을 AND로 묶어 최종 WHERE 조건 생성
+            return criteriaBuilder.and(
+                    conditions.toArray(new Predicate[0])
+            );
+        };
     }
 }

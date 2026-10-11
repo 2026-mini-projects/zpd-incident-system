@@ -13,3 +13,25 @@ Accept: application/json
 ### 존재하지 않는 사건 (단건 조회 3)
 GET http://localhost:8080/api/v1/cases/9999
 Accept: application/json
+
+-------------------------------------------------
+
+### 사건 목록 상태별 조회
+GET http://localhost:8080/api/v1/cases?status=WAITING
+Accept: application/json
+
+### 사건 목록 구역별 조회
+GET http://localhost:8080/api/v1/cases?district=DOWNTOWN
+Accept: application/json
+
+### 사건 목록 제목 검색
+GET http://localhost:8080/api/v1/cases?keyword=실종
+Accept: application/json
+
+### 사건 목록 페이징 및 최신순 정렬
+GET http://localhost:8080/api/v1/cases?page=0&size=5&sort=desc
+Accept: application/json
+
+### 사건 목록 복합 조건 조회
+GET http://localhost:8080/api/v1/cases?status=WAITING&district=DOWNTOWN&keyword=레이싱&page=0&size=5&sort=desc
+Accept: application/json
