@@ -18,6 +18,8 @@ import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.entity.enums.OfficerSize;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
+import com.zpd.incident.dto.request.OfficerUpdateRequest;
+import com.zpd.incident.dto.response.OfficerUpdateResponse;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,54 @@ public class OfficerService {
 
     public OfficerService(OfficerRepository officerRepository) {
         this.officerRepository = officerRepository;
+    }
+
+    @Transactional
+    public OfficerUpdateResponse updateOfficer(
+            Integer officerId,
+            OfficerUpdateRequest request) {
+
+        Officer officer = officerRepository.findById(officerId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "경찰관을 찾을 수 없습니다."
+                ));
+
+        validateUpdateText(request.getNickname(), "닉네임");
+        validateUpdateText(request.getName(), "이름");
+        validateUpdateText(request.getSpecies(), "종족");
+
+        User user = officer.getUser();
+
+        if (request.getNickname() != null) {
+            user.changeNickname(request.getNickname());
+        }
+
+        if (request.getName() != null) {
+            officer.changeName(request.getName());
+        }
+
+        if (request.getSpecies() != null) {
+            officer.changeSpecies(request.getSpecies());
+        }
+
+        if (request.getSize() != null) {
+            officer.changeSize(request.getSize());
+        }
+
+        if (request.getDistrict() != null) {
+            officer.changeDistrict(request.getDistrict());
+        }
+
+        return new OfficerUpdateResponse(
+                officer.getId(),
+                user.getNickname(),
+                officer.getName(),
+                officer.getSpecies(),
+                officer.getSize(),
+                officer.getDistrict(),
+                officer.getStatus()
+        );
     }
 
     @Transactional(readOnly = true)
@@ -205,5 +255,19 @@ public class OfficerService {
         }
 
         return result;
+    }
+
+    private void validateUpdateText(String value, String fieldName) {
+
+        if (value == null) {
+            return;
+        }
+
+        if (value.isBlank() || value.codePointCount(0, value.length()) > 50) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    fieldName + "은(는) 공백이 아니어야 하며 50자 이하여야 합니다."
+            );
+        }
     }
 }

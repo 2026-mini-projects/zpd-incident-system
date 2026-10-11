@@ -74,4 +74,20 @@ public class Officer {
     public User getUser() {
         return user;
     }
+
+    public void changeName(String name) {
+        this.name = name;
+    }
+
+    public void changeSpecies(String species) {
+        this.species = species;
+    }
+
+    public void changeSize(OfficerSize size) {
+        this.size = size;
+    }
+
+    public void changeDistrict(District district) {
+        this.district = district;
+    }
 }
