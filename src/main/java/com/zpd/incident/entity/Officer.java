@@ -90,4 +90,8 @@ public class Officer {
     public void changeDistrict(District district) {
         this.district = district;
     }
+
+    public void retire() {
+        this.status = OfficerStatus.RETIRED;
+    }
 }
