@@ -15,4 +15,8 @@ public interface IncidentCaseRepository
             Pageable pageable
     );
 
+    Page<IncidentCase> findByOfficer_Id(
+            Integer officerId,
+            Pageable pageable
+    );
 }

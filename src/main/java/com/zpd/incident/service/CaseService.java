@@ -185,7 +185,7 @@ public class CaseService {
             int size,
             String sort
     ){
-        // 1. 접수 일시 기준 정렬 조건 생성
+        // 접수 일시 기준 정렬 조건 생성
         Sort sortCondition = Sort.by(
                 "asc".equalsIgnoreCase(sort)
                         ? Sort.Direction.ASC
@@ -193,18 +193,18 @@ public class CaseService {
                 "createdAt"
         );
 
-        // 2. 페이지 번호, 크기와 정렬 조건 생성
+        // 페이지 번호, 크기와 정렬 조건 생성
         Pageable pageable =
                 PageRequest.of(page, size, sortCondition);
 
-        // 3. 해당 시민이 신고한 사건 조회
+        // 해당 시민이 신고한 사건 조회
         Page<IncidentCase> reportedCases =
                 incidentCaseRepository.findByReporter_Id(
                         reporterId,
                         pageable
                 );
 
-        // 4. 사건 Entity를 시민 신고 사건 응답 DTO로 변환
+        // 사건 Entity를 시민 신고 사건 응답 DTO로 변환
         Page<ReportedCaseResponse> responses =
                 reportedCases.map(incidentCase -> {
 
@@ -228,7 +228,65 @@ public class CaseService {
                     );
                 });
 
-        // 5. DTO 목록과 페이지 정보를 함께 반환
+        // DTO 목록과 페이지 정보를 함께 반환
+        return new PageResponse<>(
+                responses.getContent(),
+                responses.getNumber(),
+                responses.getSize(),
+                responses.getTotalElements(),
+                responses.getTotalPages(),
+                responses.hasNext()
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<AssignedCaseResponse> getAssignedCases(
+            Integer officerId,
+            int page,
+            int size,
+            String sort
+    ){
+
+        // 사건 접수 일시 기준 정렬
+        Sort sortCondition = Sort.by(
+                "asc".equalsIgnoreCase(sort)
+                        ? Sort.Direction.ASC
+                        : Sort.Direction.DESC,
+                "createdAt"
+        );
+
+        // 페이지 번호, 크기와 정렬 조건 생성
+        Pageable pageable =
+                PageRequest.of(page, size, sortCondition);
+
+        // 해당 경찰관이 담당한 사건 조회
+        Page<IncidentCase> assignedCases =
+                incidentCaseRepository.findByOfficer_Id(
+                        officerId,
+                        pageable
+                );
+
+        // 사건 Entity를 경찰관 담당 사건 응답 DTO로 변환
+        Page<AssignedCaseResponse> responses =
+                assignedCases.map(incidentCase -> {
+
+                    CaseReporterResponse reporterResponse =
+                            new CaseReporterResponse(
+                                    incidentCase.getReporter().getId(),
+                                    incidentCase.getReporter().getNickname()
+                            );
+
+                    return new AssignedCaseResponse(
+                            incidentCase.getCaseId(),
+                            incidentCase.getTitle(),
+                            incidentCase.getDistrict(),
+                            incidentCase.getCaseStatus(),
+                            reporterResponse,
+                            incidentCase.getCreatedAt()
+                    );
+                });
+
+        // DTO 목록과 페이지 정보를 반환
         return new PageResponse<>(
                 responses.getContent(),
                 responses.getNumber(),

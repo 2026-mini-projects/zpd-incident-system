@@ -43,3 +43,11 @@ Accept: application/json
 ### 시민(Id = 17, nickname = 리오도어 라이언하트) 신고 사건 목록 조회 - 신고 내역 없음
 GET http://localhost:8080/api/v1/cases/reported?reporterId=17&page=0&size=10&sort=desc
 Accept: application/json
+
+### 경찰관(주디홉스) 본인 담당 사건 목록 조회 - 담당 이력 있음
+GET http://localhost:8080/api/v1/cases/assigned?officerId=1001&page=0&size=10&sort=desc
+Accept: application/json
+
+### 경찰관(패트릭 팽마이어) 본인 담당 사건 목록 조회 - 담당 이력 없음
+GET http://localhost:8080/api/v1/cases/assigned?officerId=1005&page=0&size=10&sort=desc
+Accept: application/json

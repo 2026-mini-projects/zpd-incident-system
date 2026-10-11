@@ -1,6 +1,7 @@
 package com.zpd.incident.controller;
 
 import com.zpd.incident.common.PageResponse;
+import com.zpd.incident.dto.response.AssignedCaseResponse;
 import com.zpd.incident.dto.response.CaseDetailResponse;
 import com.zpd.incident.dto.response.CaseSummaryResponse;
 import com.zpd.incident.dto.response.ReportedCaseResponse;
@@ -64,6 +65,25 @@ public class CaseController {
         PageResponse<ReportedCaseResponse> response =
                 caseService.getReportedCases(
                         reporterId,
+                        page,
+                        size,
+                        sort
+                );
+
+        return Map.of("data", response);
+    }
+
+    // 경찰관이 본인 담당 사건 목록을 페이징 조회
+    @GetMapping("/assigned")
+    public Map<String, PageResponse<AssignedCaseResponse>> getAssignedCases(
+            @RequestParam Integer officerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "desc") String sort
+    ) {
+        PageResponse<AssignedCaseResponse> response =
+                caseService.getAssignedCases(
+                        officerId,
                         page,
                         size,
                         sort
