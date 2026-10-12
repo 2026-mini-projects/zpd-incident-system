@@ -1,6 +1,8 @@
 package com.zpd.incident.controller;
 
+import com.zpd.incident.common.CurrentUserProvider;
 import com.zpd.incident.common.PageResponse;
+import com.zpd.incident.dto.request.CaseCreateRequest;
 import com.zpd.incident.dto.response.AssignedCaseResponse;
 import com.zpd.incident.dto.response.CaseDetailResponse;
 import com.zpd.incident.dto.response.CaseSummaryResponse;
@@ -8,6 +10,9 @@ import com.zpd.incident.dto.response.ReportedCaseResponse;
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.service.CaseService;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -18,9 +23,11 @@ import java.util.Map;
 public class CaseController {
 
     private final CaseService caseService;
+    private final CurrentUserProvider currentUserProvider;
 
-    public CaseController(CaseService caseService) {
+    public CaseController(CaseService caseService, CurrentUserProvider currentUserProvider) {
         this.caseService = caseService;
+        this.currentUserProvider = currentUserProvider;
     }
 
     // 선택 조건과 페이지 정보를 요청 파라미터로 받아 전체 사건 요약 목록 조회
@@ -92,5 +99,19 @@ public class CaseController {
                 );
 
         return Map.of("data", response);
+    }
+
+    @PostMapping
+    public ResponseEntity<Map<String, CaseDetailResponse>> createCase(
+            @Valid @RequestBody CaseCreateRequest request
+            ){
+        Integer reporterId = currentUserProvider.getUserId();
+
+        CaseDetailResponse response =
+                caseService.createCase(reporterId, request);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(Map.of("data", response));
     }
 }

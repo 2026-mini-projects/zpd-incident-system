@@ -1,13 +1,22 @@
 package com.zpd.incident.dto.request;
 
 import com.zpd.incident.entity.enums.District;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 // 사건 접수 요청 DTO
 public class CaseCreateRequest {
 
-    private String title;               // 사건 제목
-    private String content;             // 사건 상세 내용
-    private District district;          // 사건 발생 구역
+    @NotBlank(message = "사건 제목은 필수입니다.")
+    @Size(max = 100, message = "사건 제목은 100자 이하여야 합니다.")
+    private String title;
+
+    @NotBlank(message = "사건 내용은 필수입니다.")
+    private String content;
+
+    @NotNull(message = "사건 발생 구역은 필수입니다.")
+    private District district;
 
     public CaseCreateRequest() {
     }
