@@ -2,6 +2,7 @@ package com.zpd.incident.entity;
 
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;
+import com.zpd.incident.exception.InvalidCaseStatusTransitionException;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -54,8 +55,28 @@ public class IncidentCase {
         this.caseStatus = CaseStatus.IN_PROGRESS;
     }
 
-    public void changeStatus(CaseStatus caseStatus){
+    public void changeStatus(CaseStatus newStatus) {
 
+        boolean canCancel =
+                this.caseStatus == CaseStatus.WAITING
+                        && newStatus == CaseStatus.CANCELLED;
+
+        boolean canFinish =
+                this.caseStatus == CaseStatus.IN_PROGRESS
+                        && (newStatus == CaseStatus.SOLVED
+                        || newStatus == CaseStatus.FALSE_ALARM
+                        || newStatus == CaseStatus.CLOSED);
+
+        if (!canCancel && !canFinish) {
+            throw new InvalidCaseStatusTransitionException(
+                    this.caseId,
+                    this.caseStatus,
+                    newStatus
+            );
+        }
+
+        this.caseStatus = newStatus;
+        this.closedAt = LocalDateTime.now();
     }
 
     // 수사 중인 사건의 기존 담당자를 새로운 경찰관으로 교체한다.
