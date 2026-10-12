@@ -2,7 +2,9 @@ package com.zpd.incident.controller;
 
 import com.zpd.incident.common.CurrentUserProvider;
 import com.zpd.incident.common.PageResponse;
+import com.zpd.incident.dto.request.CaseAssignRequest;
 import com.zpd.incident.dto.request.CaseCreateRequest;
+import com.zpd.incident.dto.request.CaseStatusUpdateRequest;
 import com.zpd.incident.dto.response.AssignedCaseResponse;
 import com.zpd.incident.dto.response.CaseDetailResponse;
 import com.zpd.incident.dto.response.CaseSummaryResponse;
@@ -113,5 +115,32 @@ public class CaseController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(Map.of("data", response));
+    }
+
+    // WAITING 상태의 미배정 사건에 담당 경찰관을 최초 배정한다.
+    @PatchMapping("/{caseId}/assignee")
+    public ResponseEntity<Map<String, CaseDetailResponse>> assignOfficer(
+            @PathVariable Integer caseId,
+            @Valid @RequestBody CaseAssignRequest request
+    ) {
+        // 사건 번호와 요청받은 경찰관 번호를 Service에 전달한다.
+        CaseDetailResponse response =
+                caseService.assignOfficer(caseId, request);
+
+        // 배정 후 사건 상태와 담당 경찰관 정보를 data 항목으로 반환한다.
+        return ResponseEntity
+                .ok(Map.of("data", response));
+    }
+
+    @PatchMapping("/{caseId}/status")
+    public ResponseEntity<Map<String, CaseDetailResponse>> updateCaseStatus(
+            @PathVariable Integer caseId,
+            @Valid @RequestBody CaseStatusUpdateRequest request
+    ){
+        CaseDetailResponse response =
+                caseService.updateCaseStatus(caseId, request);
+
+        return ResponseEntity
+                .ok(Map.of("data", response));
     }
 }

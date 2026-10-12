@@ -66,3 +66,21 @@ Accept: application/json
   "content": "다운타운 주차장에서 차량 유리창이 파손되었습니다.",
   "district": "DOWNTOWN"
 }
+
+### 접수된 사건에 담당 경찰관 배정
+PATCH http://localhost:8080/api/v1/cases/11/assignee
+Content-Type: application/json
+Accept: application/json
+
+{
+  "officerId": 1003
+}
+
+### 3. 다른 경찰관으로 재배정
+PATCH http://localhost:8080/api/v1/cases/11/assignee
+Content-Type: application/json
+Accept: application/json
+
+{
+  "officerId": 1001
+}
