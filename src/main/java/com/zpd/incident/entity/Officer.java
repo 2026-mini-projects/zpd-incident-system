@@ -48,7 +48,11 @@ public class Officer {
     public Officer() {
     }
 
-    public void returnToStandby(){
+    // 다른 진행 중 사건이 없는 경찰관을 대기 상태로 복귀시킨다.
+    public void returnToStandby() {
+        if (status != OfficerStatus.RETIRED) {
+            this.status = OfficerStatus.STANDBY;
+        }
     }
 
     // 사건 배정 시 경찰관을 수사 중 상태로 변경하며, 퇴직 경찰관의 배정은 차단한다.

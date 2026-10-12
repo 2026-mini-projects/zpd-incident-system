@@ -58,6 +58,12 @@ public class IncidentCase {
 
     }
 
+    // 수사 중인 사건의 기존 담당자를 새로운 경찰관으로 교체한다.
+    // 재배정 전후로 사건 상태는 IN_PROGRESS를 유지한다.
+    public void changeOfficer(Officer newOfficer) {
+        this.officer = newOfficer;
+    }
+
     // 신규 사건 생성 (ID는 DB에서 생성하고 담당 경찰관과 종료 일시는 null로 유지)
     public IncidentCase(String title, String content, District district, User reporter) {
         this.title = title;

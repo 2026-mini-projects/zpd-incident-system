@@ -344,74 +344,102 @@ public class CaseService {
                 incidentCaseRepository.save(incidentCase);
         return toCaseDetailResponse(saveCase);
     }
+    @Transactional
+    public CaseDetailResponse updateCaseStatus(Integer caseId, CaseStatusUpdateRequest request) {
+        {
+            IncidentCase incidentCase = incidentCaseRepository.findById(caseId)
+                    .orElseThrow(() ->
+                            new CaseNotFoundException(caseId));
+
+            CaseStatus previousStatus = incidentCase.getCaseStatus();
+            Officer assignedOfficer = incidentCase.getOfficer();
+
+            incidentCase.changeStatus(request.getStatus());
+
+            boolean investigationFinished =
+                    previousStatus == CaseStatus.IN_PROGRESS
+                            && (request.getStatus() == CaseStatus.SOLVED
+                            || request.getStatus() == CaseStatus.FALSE_ALARM);
+
+            if (investigationFinished && assignedOfficer != null) {
+                boolean hasOtherActiveCase =
+                        incidentCaseRepository
+                                .existsByOfficer_IdAndCaseStatusAndCaseIdNot(
+                                        assignedOfficer.getId(),
+                                        CaseStatus.IN_PROGRESS,
+                                        caseId
+                                );
+
+                if (!hasOtherActiveCase) {
+                    assignedOfficer.returnToStandby();
+                }
+            }
+
+            return toCaseDetailResponse(incidentCase);
+        }
+    }
+
 
     // WAITING 상태의 미배정 사건에 경찰관을 최초 배정한다.
     // 사건과 경찰관 상태를 함께 변경하므로 하나의 트랜잭션으로 처리한다.
     @Transactional
-    public CaseDetailResponse assignOfficer(Integer caseId, CaseAssignRequest request) {
+    public CaseDetailResponse assignOfficer(
+            Integer caseId,
+            CaseAssignRequest request
+    ) {
+        IncidentCase incidentCase = incidentCaseRepository.findById(caseId)
+                .orElseThrow(() -> new CaseNotFoundException(caseId));
 
-        // 배정할 사건을 조회하고, 존재하지 않으면 404 예외를 발생시킨다.
-        IncidentCase incidentCase =
-                incidentCaseRepository.findById(caseId)
-                        .orElseThrow(() ->
-                                new CaseNotFoundException(caseId));
+        Integer newOfficerId = request.getOfficerId();
 
-        // 최초 배정은 WAITING 상태이면서 아직 담당 경찰관이 없는 사건만 가능하다.
-        if (incidentCase.getCaseStatus() != CaseStatus.WAITING
-                || incidentCase.getOfficer() != null) {
-            throw new CaseAssignmentConflictException(caseId);
-        }
+        Officer newOfficer = officerRepository.findById(newOfficerId)
+                .orElseThrow(() ->
+                        new OfficerNotFoundException(newOfficerId));
 
-        // 요청 본문에서 배정할 경찰관의 고유 번호를 가져온다.
-        Integer officerId = request.getOfficerId();
+        // 최초 배정
+        if (incidentCase.getCaseStatus() == CaseStatus.WAITING
+                && incidentCase.getOfficer() == null) {
 
-        // 배정할 경찰관을 조회하고, 존재하지 않으면 404 예외를 발생시킨다.
-        Officer officer =
-                officerRepository.findById(officerId)
-                        .orElseThrow(() ->
-                                new OfficerNotFoundException(officerId));
+            newOfficer.startWorking();
+            incidentCase.assignOfficer(newOfficer);
 
-        // 퇴직 경찰관이면 예외가 발생하고, 배정 가능한 경찰관은 WORKING으로 변경된다.
-        officer.startWorking();
+            // 담당 경찰관 재배정
+        } else if (incidentCase.getCaseStatus() == CaseStatus.IN_PROGRESS
+                && incidentCase.getOfficer() != null) {
 
-        // 사건에 담당 경찰관을 연결하고 사건 상태를 IN_PROGRESS로 변경한다.
-        incidentCase.assignOfficer(officer);
+            Officer previousOfficer = incidentCase.getOfficer();
 
-        // JPA 변경 감지로 두 엔티티가 갱신되며, 변경된 사건 정보를 응답 DTO로 반환한다.
-        return toCaseDetailResponse(incidentCase);
-    }
+            // 현재 담당자와 같은 경찰관으로는 재배정할 수 없다.
+            if (previousOfficer.getId().equals(newOfficerId)) {
+                throw new SameOfficerAssignmentException(
+                        caseId,
+                        newOfficerId
+                );
+            }
 
-    @Transactional
-    public CaseDetailResponse updateCaseStatus(Integer caseId, CaseStatusUpdateRequest request) {
-        IncidentCase incidentCase =
-                incidentCaseRepository.findById(caseId)
-                        .orElseThrow(()-> new CaseNotFoundException(caseId));
+            // 퇴직 경찰관이면 여기서 예외가 발생한다.
+            newOfficer.startWorking();
 
-        CaseStatus previousStatus =
-                incidentCase.getCaseStatus();
+            // 기존 담당자를 새 담당자로 변경한다.
+            incidentCase.changeOfficer(newOfficer);
 
-        Officer assignedOfficer =
-                incidentCase.getOfficer();
-
-        incidentCase.changeStatus(request.getStatus());
-
-        boolean investigationFinished =
-                previousStatus == CaseStatus.IN_PROGRESS
-                        && (request.getStatus() == CaseStatus.SOLVED
-                        || request.getStatus() == CaseStatus.FALSE_ALARM);
-
-        if (investigationFinished && assignedOfficer != null) {
+            // 기존 경찰관에게 다른 진행 중 사건이 있는지 확인한다.
             boolean hasOtherActiveCase =
                     incidentCaseRepository
                             .existsByOfficer_IdAndCaseStatusAndCaseIdNot(
-                                    assignedOfficer.getId(),
+                                    previousOfficer.getId(),
                                     CaseStatus.IN_PROGRESS,
                                     caseId
                             );
 
+            // 다른 진행 사건이 없다면 대기 상태로 복귀시킨다.
             if (!hasOtherActiveCase) {
-                assignedOfficer.returnToStandby();
+                previousOfficer.returnToStandby();
             }
+
+        } else {
+            // 종료·취소된 사건 등은 배정하거나 재배정할 수 없다.
+            throw new CaseAssignmentConflictException(caseId);
         }
 
         return toCaseDetailResponse(incidentCase);

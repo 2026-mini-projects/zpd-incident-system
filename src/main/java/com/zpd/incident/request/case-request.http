@@ -75,3 +75,12 @@ Accept: application/json
 {
   "officerId": 1003
 }
+
+### 3. 다른 경찰관으로 재배정
+PATCH http://localhost:8080/api/v1/cases/11/assignee
+Content-Type: application/json
+Accept: application/json
+
+{
+  "officerId": 1001
+}
