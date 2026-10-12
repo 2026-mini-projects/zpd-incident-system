@@ -1,17 +1,19 @@
 package com.zpd.incident.service;
 
 import com.zpd.incident.common.PageResponse;
+import com.zpd.incident.dto.request.CaseAssignRequest;
 import com.zpd.incident.dto.request.CaseCreateRequest;
+import com.zpd.incident.dto.request.CaseStatusUpdateRequest;
 import com.zpd.incident.dto.response.*;
 import com.zpd.incident.entity.IncidentCase;
+import com.zpd.incident.entity.Officer;
 import com.zpd.incident.entity.User;
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;
 import com.zpd.incident.entity.enums.Role;
-import com.zpd.incident.exception.CaseNotFoundException;
-import com.zpd.incident.exception.CaseReportForbiddenException;
-import com.zpd.incident.exception.UserNotFoundException;
+import com.zpd.incident.exception.*;
 import com.zpd.incident.repository.IncidentCaseRepository;
+import com.zpd.incident.repository.OfficerRepository;
 import com.zpd.incident.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
@@ -31,14 +33,15 @@ public class CaseService {
 
     private final IncidentCaseRepository incidentCaseRepository;
     private final UserRepository userRepository;
+    private final OfficerRepository officerRepository;
 
     // 생성자에서 Repository를 전달받아 필드에 저장
-    public CaseService(
-            IncidentCaseRepository incidentCaseRepository,
-                       UserRepository userRepository
-    ) {
+
+
+    public CaseService(IncidentCaseRepository incidentCaseRepository, UserRepository userRepository, OfficerRepository officerRepository) {
         this.incidentCaseRepository = incidentCaseRepository;
         this.userRepository = userRepository;
+        this.officerRepository = officerRepository;
     }
 
     // 사건 번호로 단건 조회하며, 존재하지 않으면 CaseNotFoundException 발생
@@ -341,4 +344,76 @@ public class CaseService {
                 incidentCaseRepository.save(incidentCase);
         return toCaseDetailResponse(saveCase);
     }
-}
+
+    // WAITING 상태의 미배정 사건에 경찰관을 최초 배정한다.
+    // 사건과 경찰관 상태를 함께 변경하므로 하나의 트랜잭션으로 처리한다.
+    @Transactional
+    public CaseDetailResponse assignOfficer(Integer caseId, CaseAssignRequest request) {
+
+        // 배정할 사건을 조회하고, 존재하지 않으면 404 예외를 발생시킨다.
+        IncidentCase incidentCase =
+                incidentCaseRepository.findById(caseId)
+                        .orElseThrow(() ->
+                                new CaseNotFoundException(caseId));
+
+        // 최초 배정은 WAITING 상태이면서 아직 담당 경찰관이 없는 사건만 가능하다.
+        if (incidentCase.getCaseStatus() != CaseStatus.WAITING
+                || incidentCase.getOfficer() != null) {
+            throw new CaseAssignmentConflictException(caseId);
+        }
+
+        // 요청 본문에서 배정할 경찰관의 고유 번호를 가져온다.
+        Integer officerId = request.getOfficerId();
+
+        // 배정할 경찰관을 조회하고, 존재하지 않으면 404 예외를 발생시킨다.
+        Officer officer =
+                officerRepository.findById(officerId)
+                        .orElseThrow(() ->
+                                new OfficerNotFoundException(officerId));
+
+        // 퇴직 경찰관이면 예외가 발생하고, 배정 가능한 경찰관은 WORKING으로 변경된다.
+        officer.startWorking();
+
+        // 사건에 담당 경찰관을 연결하고 사건 상태를 IN_PROGRESS로 변경한다.
+        incidentCase.assignOfficer(officer);
+
+        // JPA 변경 감지로 두 엔티티가 갱신되며, 변경된 사건 정보를 응답 DTO로 반환한다.
+        return toCaseDetailResponse(incidentCase);
+    }
+
+    @Transactional
+    public CaseDetailResponse updateCaseStatus(Integer caseId, CaseStatusUpdateRequest request) {
+        IncidentCase incidentCase =
+                incidentCaseRepository.findById(caseId)
+                        .orElseThrow(()-> new CaseNotFoundException(caseId));
+
+        CaseStatus previousStatus =
+                incidentCase.getCaseStatus();
+
+        Officer assignedOfficer =
+                incidentCase.getOfficer();
+
+        incidentCase.changeStatus(request.getStatus());
+
+        boolean investigationFinished =
+                previousStatus == CaseStatus.IN_PROGRESS
+                        && (request.getStatus() == CaseStatus.SOLVED
+                        || request.getStatus() == CaseStatus.FALSE_ALARM);
+
+        if (investigationFinished && assignedOfficer != null) {
+            boolean hasOtherActiveCase =
+                    incidentCaseRepository
+                            .existsByOfficer_IdAndCaseStatusAndCaseIdNot(
+                                    assignedOfficer.getId(),
+                                    CaseStatus.IN_PROGRESS,
+                                    caseId
+                            );
+
+            if (!hasOtherActiveCase) {
+                assignedOfficer.returnToStandby();
+            }
+        }
+
+        return toCaseDetailResponse(incidentCase);
+    }
+    }

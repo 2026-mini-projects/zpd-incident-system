@@ -23,4 +23,10 @@ public interface IncidentCaseRepository
             Integer officerId,
             Pageable pageable
     );
+
+    boolean existsByOfficer_IdAndCaseStatusAndCaseIdNot(
+            Integer officerId,
+            CaseStatus caseStatus,
+            Integer caseId
+    );
 }

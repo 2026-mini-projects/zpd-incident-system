@@ -1,5 +1,6 @@
 package com.zpd.incident.entity;
 
+import com.zpd.incident.exception.RetiredOfficerAssignmentException;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Id;
@@ -45,6 +46,18 @@ public class Officer {
     private User user;
 
     public Officer() {
+    }
+
+    public void returnToStandby(){
+    }
+
+    // 사건 배정 시 경찰관을 수사 중 상태로 변경하며, 퇴직 경찰관의 배정은 차단한다.
+    public void startWorking() {
+        if (status == OfficerStatus.RETIRED) {
+            throw new RetiredOfficerAssignmentException(id);
+        }
+
+        this.status = OfficerStatus.WORKING;
     }
 
     public Integer getId() {

@@ -48,6 +48,16 @@ public class IncidentCase {
     public IncidentCase() {
     }
 
+    // 최초 배정된 경찰관을 사건에 연결하고 사건을 수사 중 상태로 변경한다.
+    public void assignOfficer(Officer officer){
+        this.officer = officer;
+        this.caseStatus = CaseStatus.IN_PROGRESS;
+    }
+
+    public void changeStatus(CaseStatus caseStatus){
+
+    }
+
     // 신규 사건 생성 (ID는 DB에서 생성하고 담당 경찰관과 종료 일시는 null로 유지)
     public IncidentCase(String title, String content, District district, User reporter) {
         this.title = title;
