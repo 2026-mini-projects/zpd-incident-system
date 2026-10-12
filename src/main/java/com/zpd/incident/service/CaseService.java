@@ -1,12 +1,18 @@
 package com.zpd.incident.service;
 
 import com.zpd.incident.common.PageResponse;
+import com.zpd.incident.dto.request.CaseCreateRequest;
 import com.zpd.incident.dto.response.*;
 import com.zpd.incident.entity.IncidentCase;
+import com.zpd.incident.entity.User;
 import com.zpd.incident.entity.enums.CaseStatus;
 import com.zpd.incident.entity.enums.District;
+import com.zpd.incident.entity.enums.Role;
 import com.zpd.incident.exception.CaseNotFoundException;
+import com.zpd.incident.exception.CaseReportForbiddenException;
+import com.zpd.incident.exception.UserNotFoundException;
 import com.zpd.incident.repository.IncidentCaseRepository;
+import com.zpd.incident.repository.UserRepository;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -24,10 +30,15 @@ import java.util.List;
 public class CaseService {
 
     private final IncidentCaseRepository incidentCaseRepository;
+    private final UserRepository userRepository;
 
     // 생성자에서 Repository를 전달받아 필드에 저장
-    public CaseService(IncidentCaseRepository incidentCaseRepository) {
+    public CaseService(
+            IncidentCaseRepository incidentCaseRepository,
+                       UserRepository userRepository
+    ) {
         this.incidentCaseRepository = incidentCaseRepository;
+        this.userRepository = userRepository;
     }
 
     // 사건 번호로 단건 조회하며, 존재하지 않으면 CaseNotFoundException 발생
@@ -307,5 +318,27 @@ public class CaseService {
                 responses.getTotalPages(),
                 responses.hasNext()
         );
+    }
+
+    @Transactional
+    public CaseDetailResponse createCase(Integer reporterId, CaseCreateRequest request) {
+
+        User reporter = userRepository.findById(reporterId)
+                .orElseThrow(() -> new UserNotFoundException(reporterId));
+
+        if(reporter.getRole() != Role.CITIZEN) {
+            throw new CaseReportForbiddenException();
+        }
+
+        IncidentCase incidentCase = new IncidentCase(
+                request.getTitle().trim(),
+                request.getContent().trim(),
+                request.getDistrict(),
+                reporter
+        );
+
+        IncidentCase saveCase =
+                incidentCaseRepository.save(incidentCase);
+        return toCaseDetailResponse(saveCase);
     }
 }
