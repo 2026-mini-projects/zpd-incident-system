@@ -359,7 +359,8 @@ public class CaseService {
             boolean investigationFinished =
                     previousStatus == CaseStatus.IN_PROGRESS
                             && (request.getStatus() == CaseStatus.SOLVED
-                            || request.getStatus() == CaseStatus.FALSE_ALARM);
+                            || request.getStatus() == CaseStatus.FALSE_ALARM
+                            || request.getStatus() == CaseStatus.CLOSED);
 
             if (investigationFinished && assignedOfficer != null) {
                 boolean hasOtherActiveCase =

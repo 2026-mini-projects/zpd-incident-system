@@ -1,6 +1,7 @@
 package com.zpd.incident.dto.request;
 
 import com.zpd.incident.entity.enums.CaseStatus;
+import jakarta.validation.constraints.NotNull;
 
 // 사건 상태 변경 요청 DTO
 public class CaseStatusUpdateRequest {
@@ -9,6 +10,7 @@ public class CaseStatusUpdateRequest {
     *  WAITING(수사 대기), IN_PROGRESS(수사 중), SOLVED(해결),
     *  FALSE_ALARM(오신고), CLOSED(종결), CANCELLED(취소)
     * */
+    @NotNull(message = "변경할 사건 상태는 필수입니다.")
     private CaseStatus status;
 
     public CaseStatusUpdateRequest() {
